@@ -1,0 +1,56 @@
+# DOCUMENTATION https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.10/
+kind: Service 
+apiVersion: v1
+metadata:
+  name: chess-service
+spec:
+  selector:
+    app: chess
+  ports:
+    - protocol: "TCP"
+      port: 8080
+      targetPort: 8080
+      nodePort: 30001
+  type: NodePort
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chess-deployment
+  labels:
+    app: chess
+spec:
+  selector:
+    matchLabels:
+      app: chess
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: chess
+    spec:
+      containers:
+      - name: chess
+        image: chess-minikube
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        securityContext:
+          runAsUser: 1000
+          readOnlyRootFilesystem: false 
+          runAsNonRoot: true
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 3
+        
